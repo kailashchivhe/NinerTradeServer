@@ -1,0 +1,21 @@
+{
+  "name": "niner_trade",
+  "version": "1.0.0",
+  "description": "\"This is a server for the Niner Trade Application.\"",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon app.js"
+  },
+  "author": "\"Kailash Chivhe\"",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.19.2",
+    "cors": "^2.8.5",
+    "express": "^4.17.3",
+    "luxon": "^2.3.1",
+    "method-override": "^3.0.0",
+    "morgan": "^1.10.0",
+    "uuid": "^8.3.2"
+  }
+}
