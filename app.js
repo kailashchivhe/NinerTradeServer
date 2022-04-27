@@ -2,6 +2,7 @@ const express = require('express');
 const morgan = require('morgan');
 const methodOverride = require('method-override');
 const tradeRoutes = require('./routes/tradeRoutes');
+const userRoutes = require('./routes/userRoutes');
 var bodyParser = require('body-parser');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -33,6 +34,7 @@ app.get('/', (req,res)=>{
 });
 
 app.use('/trade', tradeRoutes );
+app.use('/user', userRoutes );
 
 app.use((err,req,res, next)=>{
     if(!err.status){
