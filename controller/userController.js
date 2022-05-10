@@ -37,7 +37,6 @@ exports.getAllUserTrades = (req,res, next)=>{
 
 exports.createUser =  (req,res, next)=>{
     let user = new model(req.body);
-    console.log(user);
     user.save()
     .then((user)=>{
         res.status = 200;
@@ -54,8 +53,20 @@ exports.createUser =  (req,res, next)=>{
 
 exports.getUser = (req,res, next)=>{
     let userData = req.body;
-    console.log(userData);
-    model.findOne({userName: userData.userName, password: userData.password}, function (err, myUser) {
+    model.findOne({userName: userData.userName}, function (err, myUser) {
+        if (!err)
+        {
+            res.json(myUser); 
+        }
+        else{
+            res.status(401).send('Invalid User');
+        }
+    });
+}
+
+exports.getUserFromId = (req,res, next)=>{
+    let id = req.params.id;
+    model.findOne({_id: Object(id)}, function (err, myUser) {
         if (!err)
         {
             res.json(myUser); 
@@ -68,17 +79,25 @@ exports.getUser = (req,res, next)=>{
 
 exports.login = (req,res, next)=>{
     let userData = req.body
-    model.findOne({email: userData.email, password: userData.password}, function (err, myUser) {
-        if (!err)
-        {
-            let payload = {subject: 1};
-            let token = jwt.sign(payload, 'secretKey');
-            res.status(200)
-            res.json({'token':token});   
+
+    model.findOne({email:userData.email})
+    .then(user=>{
+        if(user){
+            user.comparePassword(userData.password)
+            .then(result=>{
+                if(result){
+                    let payload = {subject: 1};
+                    let token = jwt.sign(payload, 'secretKey');
+                    res.status(200)
+                    res.json({'token':token});   
+                }else{
+                    res.status(401).send('Invalid Password');
+                }
+            })
+            .catch(error=>next(error))
+        }else{
+            res.status(401).send('Invalid Email');
         }
-        else 
-        {
-            res.status(401).send('Invalid Password');
-        }
-    });
+
+    }).catch(error=>next(error));
 };

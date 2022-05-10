@@ -1,0 +1,163 @@
+const model = require('../model/offer');
+const trade = require('../model/trade');
+
+exports.getUserOffers = (req, res, next)=>{
+    let id = req.params.id;
+    model.find({'requestUserId': id}, function (err, offers) {
+        if (!err)
+        {
+            res.json(offers); 
+        }
+        else{
+            next(err)
+        }
+    });
+}
+
+exports.getOfferRequests = (req, res, next)=>{
+    let id = req.params.id;
+    model.find({'receiverUserId': id}, function (err, offers) {
+        if (!err)
+        {
+            res.json(offers); 
+        }
+        else{
+            next(err)
+        }
+    });
+}
+
+exports.requestOffer =  (req,res, next)=>{
+    let offer = new model(req.body);
+    offer.save()
+    .then((user)=>{
+        res.status = 200;
+        res.json({'response':'success'});
+    })
+    .catch(error=>{
+        console.log(error);
+        if(error.name === "ValidationError"){
+            error.status = 400;
+        }
+        next(error);
+    });
+};
+
+exports.acceptOffer =  (req,res, next)=>{
+    let offer = new model(req.body);
+    offer.status = true
+    model.findByIdAndUpdate(offer._id, offer, { useFindAndModify: false, runValidators: true })
+        .then(data => {
+            if (data) {
+                migrateData(offer);
+            } else {
+                let err = new Error('Cannot find a trade with id ' + id);
+                err.status = 404;
+                next(err);
+            }
+        })
+        .catch(error => {
+            if (error.name === "ValidationError") {
+                error.status = 400;
+            }
+            next(error)
+        })
+};
+
+function migrateData(offer){
+    trade.find({'_id':Object(offer.receiverTradeId)}).then(data => {
+        if (data) {
+            updateReceiverTrade(offer,data);
+        } else {
+            let err = new Error('Cannot find a trade with id ' + id);
+            err.status = 404;
+            next(err);
+        }
+    })
+    .catch(error => {
+        if (error.name === "ValidationError") {
+            error.status = 400;
+        }
+        next(error)
+    })
+}
+
+function updateReceiverTrade(offer, data){
+    data.userId = offer.requestUserId;
+    trade.findByIdAndUpdate(data._id,data,{useFindAndModify:false, runValidators:true})
+        .then(trade=>{
+            if(trade){
+                updateRequestTrade(offer);
+            }else {
+                let err = new Error('Cannot find a trade with id ' + id);
+                err.status = 404;
+                next(err);
+            }
+        })
+        .catch(error=>{
+            if(error.name === "ValidationError"){
+                error.status = 400;
+            }
+            next(error)})
+}
+
+function updateRequestTrade(offer){
+    trade.find({'_id':Object(offer.requestTradeId)}).then(data => {
+        if (data) {
+            transferRequestTrade(offer,data);
+        } else {
+            let err = new Error('Cannot find a trade with id ' + id);
+            err.status = 404;
+            next(err);
+        }
+    })
+    .catch(error => {
+        if (error.name === "ValidationError") {
+            error.status = 400;
+        }
+        next(error)
+    })
+}
+
+function transferRequestTrade(offer,data){
+    data.userId = offer.receiverUserId;
+    trade.findByIdAndUpdate(data._id,data,{useFindAndModify:false, runValidators:true})
+        .then(trade=>{
+            if(trade){
+                res.status(200);
+                res.json({'response':'success'});
+            }else {
+                let err = new Error('Cannot find a trade with id ' + id);
+                err.status = 404;
+                next(err);
+            }
+        })
+        .catch(error=>{
+            if(error.name === "ValidationError"){
+                error.status = 400;
+            }
+            next(error)
+        })
+}
+
+exports.declineOffer =  (req,res, next)=>{
+    let offer = new model(req.body);
+    offer.status = false
+    model.findByIdAndDelete(offer._id,{useFindAndModify:false})
+        .then(data=>{
+            if(data){
+                res.status(200);
+                res.json({'response':'success'}); 
+            }else {
+                let err = new Error('Cannot find a trade with id ' + id);
+                err.status = 404;
+                next(err);
+            }
+        })
+        .catch(error=>{
+            if(error.name === "ValidationError"){
+                error.status = 400;
+            }
+        next(error)
+    })
+};

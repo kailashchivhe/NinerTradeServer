@@ -1,0 +1,52 @@
+const model = require('../model/watch_list');
+
+exports.getWatchList = (req, res, next)=>{
+    let id = req.params.id;
+    model.find({userId: id}, function (err, offers) {
+        if (!err)
+        {
+            res.json(offers); 
+        }
+        else{
+            next(err)
+        }
+    });
+}
+
+exports.addToWatchList = (req, res, next)=>{
+    let offer = new model(req.body);
+    offer.save()
+    .then((data)=>{
+        res.status = 200;
+        res.json({'response':'success'});
+    })
+    .catch(error=>{
+        console.log(error);
+        if(error.name === "ValidationError"){
+            error.status = 400;
+        }
+        next(error);
+    });
+}
+
+exports.removeWatchList = (req, res, next)=>{
+    let watch = new model(req.body);
+    watch.status = false
+    model.findByIdAndDelete(watch._id,{useFindAndModify:false})
+        .then(data=>{
+            if(data){
+                res.status(200);
+                res.json({'response':'success'}); 
+            }else {
+                let err = new Error('Cannot find a trade with id ' + id);
+                err.status = 404;
+                next(err);
+            }
+        })
+        .catch(error=>{
+            if(error.name === "ValidationError"){
+                error.status = 400;
+            }
+        next(error)
+    })
+}
