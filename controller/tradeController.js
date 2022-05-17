@@ -1,4 +1,6 @@
 const model = require('../model/trade');
+const offer = require('../model/offer');
+const watch = require('../model/watch_list');
 
 exports.getAllTrades = (req,res)=>{
     model.find()
@@ -81,6 +83,9 @@ exports.deleteTrade = (req,res, next)=>{
         model.findByIdAndDelete(id,{useFindAndModify:false})
         .then(trade=>{
             if(trade){
+                offer.deleteOne({'requestTradeId': id });
+                offer.deleteOne({'receiverTradeId': id });
+                watch.deleteOne({'tradeId': id});
                 res.status(200);
                 res.json({'response':'success'}); 
             }else {
